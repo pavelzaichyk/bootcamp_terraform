@@ -20,16 +20,11 @@ resource "local_file" "private_key" {
 # Fetch the latest Amazon Linux AMI
 data "aws_ami" "amazon_linux" {
   most_recent = true
-  owners = ["amazon"]
-
-  filter {
-    name = "owner-alias"
-    values = ["amazon"]
-  }
+  owners = ["self"]
 
   filter {
     name = "name"
-    values = ["al2023-ami-2023.*-kernel-6.1-x86_64"]
+    values = ["AmazonLinux-Nginx-AMI"]
   }
 }
 
@@ -44,19 +39,12 @@ resource "aws_instance" "amazon_linux" {
     Name = "EC2-Amazon-Linux"
   }
 
-  # User data script to install and start Nginx
+  # User data script
   user_data = <<-EOF
               #!/bin/bash
-              sudo yum update -y
-              sudo amazon-linux-extras enable nginx1
-              sudo yum install -y nginx
-              sudo systemctl start nginx
-              sudo systemctl enable nginx
-              echo "<h1>Hello World from Amazon Linux</h1>" | sudo tee /usr/share/nginx/html/index.html
+              echo "<h1>Hello World</h1><p>OS Version: $(cat /etc/os-release | grep PRETTY_NAME | cut -d '=' -f2 | tr -d '\"')</p>" | sudo tee /usr/share/nginx/html/index.html
               sudo systemctl restart nginx
               EOF
-
-  depends_on = [aws_nat_gateway.nat]
 }
 
 # Fetch the latest Ubuntu AMI

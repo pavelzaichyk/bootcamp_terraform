@@ -44,37 +44,37 @@ resource "aws_security_group" "ubuntu_sg" {
 
   # Allow SSH
   ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
   # Allow HTTP
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
   # Allow HTTPS
   ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
   # Allow ICMP
   ingress {
-    from_port   = -1
-    to_port     = -1
-    protocol    = "icmp"
+    from_port = -1
+    to_port   = -1
+    protocol  = "icmp"
     cidr_blocks = ["0.0.0.0/0"]
   }
   # Allow all outbound traffic
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -85,67 +85,65 @@ resource "aws_security_group" "amazon_linux_sg" {
 
   # Allow SSH from Ubuntu
   ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [aws_subnet.public_subnet.cidr_block]
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+    security_groups = [aws_security_group.ubuntu_sg.id]
   }
+
   # Allow HTTP from Ubuntu
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = [aws_subnet.public_subnet.cidr_block]
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+    security_groups = [aws_security_group.ubuntu_sg.id]
   }
+
   # Allow HTTPS from Ubuntu
   ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = [aws_subnet.public_subnet.cidr_block]
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
+    security_groups = [aws_security_group.ubuntu_sg.id]
   }
+
   # Allow ICMP from Ubuntu
   ingress {
-    from_port   = -1
-    to_port     = -1
-    protocol    = "icmp"
-    cidr_blocks = [aws_subnet.public_subnet.cidr_block]
+    from_port = -1
+    to_port   = -1
+    protocol  = "icmp"
+    security_groups = [aws_security_group.ubuntu_sg.id]
   }
-  # Allow all outbound traffic
+
+  # Allow SSH to Ubuntu
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+    security_groups = [aws_security_group.ubuntu_sg.id]
   }
-}
 
-# Elastic IP for NAT Gateway
-resource "aws_eip" "nat" {}
+  # Allow HTTP to Ubuntu
+  egress {
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+    security_groups = [aws_security_group.ubuntu_sg.id]
+  }
 
-# NAT Gateway for private subnet to access the internet
-resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public_subnet.id
+  # Allow HTTPS to Ubuntu
+  egress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
+    security_groups = [aws_security_group.ubuntu_sg.id]
+  }
 
-  # Ensure proper ordering with Internet Gateway
-  depends_on = [aws_internet_gateway.igw]
-}
-
-# Private Route Table for Amazon Linux to access the internet via NAT
-resource "aws_route_table" "private_rt" {
-  vpc_id = aws_vpc.my_vpc.id
-}
-
-# Route for private subnet to access the internet via NAT
-resource "aws_route" "private_nat_access" {
-  route_table_id         = aws_route_table.private_rt.id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.nat.id
-}
-
-# Associate private subnet with private route table
-resource "aws_route_table_association" "private_assoc" {
-  subnet_id      = aws_subnet.private_subnet.id
-  route_table_id = aws_route_table.private_rt.id
+  # Allow ICMP to Ubuntu
+  egress {
+    from_port = -1
+    to_port   = -1
+    protocol  = "icmp"
+    security_groups = [aws_security_group.ubuntu_sg.id]
+  }
 }
